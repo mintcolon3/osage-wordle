@@ -40,7 +40,7 @@ async def on_message(message):
         return
     content = message.content.lower()
     day = words[2]
-    word = str(words[1][0 if day != 9 else day-1])
+    word = str(words[1][0 if day == 13 else (day-1)%len(words[1])])
     letters = len(word)
     gametext = f"# OSAGE WORDLE #{day}\n{''.join(emojis.letters[0][:10])}\n{''.join(emojis.letters[0][10:20])}\n{''.join(emojis.letters[0][20:])}\n{'-'*15}\n{emojis.blank*letters}"
     
@@ -119,7 +119,7 @@ async def on_message(message):
 
             if guessval == "11111" or streaks[str(message.author.id)]["playing"] == 6:
                 game = await message.channel.fetch_message(streaks[str(message.author.id)][str(day)][1])
-                gametext = game.content + f"\n\nThe word was `{words[1][0 if day != 9 else day-1]}`" + (f"\nhttps://www.youtube.com/watch?v={words[4][words[1][0 if day != 9 else day-1]]}" if words[4][words[1][0 if day != 9 else day-1]] != "" else "")
+                gametext = game.content + f"\n\nThe word was `{words[1][0 if day == 13 else (day-1)%len(words[1])]}`" + (f"\nhttps://www.youtube.com/watch?v={words[4][words[1][0 if day == 13 else (day-1)%len(words[1])]]}" if words[4][words[1][0 if day == 13 else (day-1)%len(words[1])]] != "" else "")
                 await game.edit(content=gametext)
 
                 prev_guesses.append(guess)
@@ -171,8 +171,8 @@ async def reminder(ctx):
 @commands.is_owner()
 async def reset(ctx):
     global words
-    random.shuffle(words[1])
     words[2] += 1
+    if (words[2]-1)%len(words[1]) == 0: random.shuffle(words[1])
     for user in streaks.keys():
         if streaks[user]["playing"] != -1: streaks[user]["streak"] = 0
         streaks[user]["playing"] = 0
