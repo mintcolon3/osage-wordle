@@ -2,6 +2,7 @@ import discord
 import json
 import emojis
 import string
+import typing
 import random
 import wordle
 import datetime
@@ -22,7 +23,7 @@ async def on_ready():
     print("syncing commands...")
     await bot.tree.sync()
     print(f'Logged in as {bot.user.name}\n')
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Inabakumori"), status=discord.Status.online)
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="INABAKUMORI | Hadal Abyss Zone"), status=discord.Status.online)
     # await bot.change_presence(status=discord.Status.invisible)
 
 @bot.event
@@ -242,7 +243,7 @@ async def append(ctx, word, sauce = ""):
         json.dump(words, wordsfile, indent=4)
 
 @bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: discord.User = None, day: int = words[2]):
+async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light"] = "dark"):
     async with ctx.typing():
         if user == None: user = ctx.author
         if day < 1: day = 1
@@ -266,7 +267,7 @@ async def getdaily(ctx, user: discord.User = None, day: int = words[2]):
                 letter = int(letter)
                 if letter == 1: message += "🟩"
                 elif letter == 2: message += "🟨"
-                elif letter == 3: message += "⬛"
+                elif letter == 3: message += ("⬛" if theme == "dark" else "⬜")
         
         await ctx.reply(message)
 
