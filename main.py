@@ -35,6 +35,21 @@ async def on_command_error(ctx, error):
 @bot.event
 async def on_message(message):
     # if message.author.id != 1170381506460536905: return
+
+    if message.content.startswith('!^ ') and message.author.id == 1170381506460536905:
+        await message.delete()
+        
+        if " -ds " in message.content:
+            split = message.content.split(" -ds ")
+            user = await bot.fetch_user(int(split[1]))
+            await user.send(split[0].replace('!^ ', ''))
+        elif message.reference: 
+            reply_to = await message.channel.fetch_message(message.reference.message_id)
+            if message.content.endswith(' -d'): await reply_to.author.send(message.content.replace('!^ ', '').replace(' -d', ''))
+            else: await reply_to.reply(message.content.replace('!^ ', ''))
+        else: await message.channel.send(message.content.replace('!^ ', ''))
+        return
+
     global words, streaks
     if message.author.bot or message.guild is not None:
         if not message.author.bot: await bot.process_commands(message)
