@@ -1,5 +1,6 @@
 __pycache__
 words.json
 streaks.json
-pfp.pdn
+*.pdn
 private.py
+OsageWordle.code-workspace

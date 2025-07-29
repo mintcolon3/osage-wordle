@@ -19,8 +19,11 @@ with open('words.json') as wordsfile:
 
 @bot.event
 async def on_ready():
+    print("syncing commands...")
+    await bot.tree.sync()
     print(f'Logged in as {bot.user.name}\n')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Inabakumori"), status=discord.Status.online)
+    # await bot.change_presence(status=discord.Status.invisible)
 
 @bot.event
 async def on_command_error(ctx, error):
@@ -31,7 +34,8 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_message(message):
-    global words
+    # if message.author.id != 1170381506460536905: return
+    global words, streaks
     if message.author.bot or message.guild is not None:
         if not message.author.bot: await bot.process_commands(message)
         return
@@ -119,7 +123,12 @@ async def on_message(message):
 
             if guessval == "11111" or streaks[str(message.author.id)]["playing"] == 6:
                 game = await message.channel.fetch_message(streaks[str(message.author.id)][str(day)][1])
-                gametext = game.content + f"\n\nThe word was `{words[1][0 if day == 13 else (day-1)%len(words[1])]}`" + (f"\nhttps://www.youtube.com/watch?v={words[4][words[1][0 if day == 13 else (day-1)%len(words[1])]]}" if words[4][words[1][0 if day == 13 else (day-1)%len(words[1])]] != "" else "")
+
+                saucestring = words[4][words[1][(day-1)%len(words[1])]]
+                if saucestring.startswith("https") or saucestring == "": sauce = saucestring
+                else: sauce = f"https://www.youtube.com/watch?v={saucestring}"
+                
+                gametext = game.content + f"\n\nThe word was `{words[1][0 if day == 13 else (day-1)%len(words[1])]}`" + f"\n{sauce}"
                 await game.edit(content=gametext)
 
                 prev_guesses.append(guess)
@@ -167,60 +176,93 @@ async def reminder(ctx):
     with open("streaks.json", "w") as streaksfile:
         json.dump(streaks, streaksfile, indent=4)
 
-@bot.command()
+@bot.group()
 @commands.is_owner()
+async def admin(ctx):
+    return
+
+@admin.command()
 async def reset(ctx):
+    async with ctx.typing():
+        global words, streaks
+        words[2] += 1
+        if (words[2]-1)%len(words[1]) == 0: random.shuffle(words[1])
+        for user in streaks.keys():
+            if streaks[user]["playing"] != -1: streaks[user]["streak"] = 0
+            streaks[user]["playing"] = 0
+            if user == 1155305615757946991:
+                streaks.pop(str(user.id))
+        
+        with open("words.json", "w") as wordsfile:
+            json.dump(words, wordsfile, indent=4)
+        with open("streaks.json", "w") as streaksfile:
+            json.dump(streaks, streaksfile, indent=4)
+        
+        await ctx.reply("daily word has been reset")
+
+@admin.command()
+async def shuffle(ctx):
     global words
-    words[2] += 1
-    if (words[2]-1)%len(words[1]) == 0: random.shuffle(words[1])
-    for user in streaks.keys():
-        if streaks[user]["playing"] != -1: streaks[user]["streak"] = 0
-        streaks[user]["playing"] = 0
-        if user == 1155305615757946991:
-            streaks.pop(str(user.id))
-    
+    random.shuffle(words[1])
     with open("words.json", "w") as wordsfile:
         json.dump(words, wordsfile, indent=4)
+
+@admin.command()
+async def rmstreak(ctx, user: discord.user = None):
+    global streaks
+    if user == None:
+        for userid in streaks.keys(): streaks[userid]["streak"] = 0
+    else:
+        streaks[str(user.id)]["streak"] = 0
     with open("streaks.json", "w") as streaksfile:
         json.dump(streaks, streaksfile, indent=4)
-    
-    await ctx.reply("daily word has been reset")
 
-@bot.command()
+@admin.command()
+async def append(ctx, word, sauce = ""):
+    global words
+    words[1].append(word)
+    words[4][word] = sauce
+    await ctx.reply("added.")
+    with open("words.json", "w") as wordsfile:
+        json.dump(words, wordsfile, indent=4)
+
+@bot.hybrid_command(brief="get osage wordle diagram")
 async def getdaily(ctx, user: discord.User = None, day: int = words[2]):
-    if user == None: user = ctx.author
-    if day < 1: day = 1
-    if str(user.id) not in streaks.keys():
-        await ctx.reply("user has never played osage wordle.")
-        return
-    elif str(day) not in streaks[str(user.id)].keys():
-        await ctx.reply("user has not played that day.")
-        return
-    elif len(streaks[str(user.id)][str(day)]) < 3:
-        await ctx.reply("not available.")
-        return
-    elif len(streaks[str(user.id)][str(day)][2]) == 0:
-        await ctx.reply("user has started game.")
-        return
-    
-    message = f"**OSAGE WORDLE #{day} FOR {user.name.upper()}**"
-    for guess in streaks[str(user.id)][str(day)][2]:
-        message += "\n"
-        for letter in guess:
-            letter = int(letter)
-            if letter == 1: message += "🟩"
-            elif letter == 2: message += "🟨"
-            elif letter == 3: message += "⬛"
-    
-    await ctx.reply(message)
+    async with ctx.typing():
+        if user == None: user = ctx.author
+        if day < 1: day = 1
+        if str(user.id) not in streaks.keys():
+            await ctx.reply("user has never played osage wordle.")
+            return
+        elif str(day) not in streaks[str(user.id)].keys():
+            await ctx.reply("user has not played that day.")
+            return
+        elif len(streaks[str(user.id)][str(day)]) < 3:
+            await ctx.reply("not available.")
+            return
+        elif len(streaks[str(user.id)][str(day)][2]) == 0:
+            await ctx.reply("user has started game.")
+            return
+        
+        message = f"**OSAGE WORDLE #{day} FOR {user.name.upper()}**"
+        for guess in streaks[str(user.id)][str(day)][2]:
+            message += "\n"
+            for letter in guess:
+                letter = int(letter)
+                if letter == 1: message += "🟩"
+                elif letter == 2: message += "🟨"
+                elif letter == 3: message += "⬛"
+        
+        await ctx.reply(message)
 
-@bot.command()
+@bot.hybrid_command(brief="get osage wordle streak")
 async def getstreak(ctx, user: discord.User = None):
-    if user == None: user = ctx.author
-    if str(user.id) not in streaks.keys():
-        await ctx.reply("user has never played osage wordle.")
-        return
-    await ctx.reply(f"{user.name} has an osage wordle streak of {streaks[str(user.id)]['streak']} days.")
+    async with ctx.typing():
+        if user == None: user = ctx.author
+        if str(user.id) not in streaks.keys():
+            await ctx.reply("user has never played osage wordle.")
+            return
+        await ctx.reply(f"{user.name} has an osage wordle streak of {streaks[str(user.id)]['streak']} days.")
 
 def streakvalue(user, day):
     if str(day) in user.keys():
@@ -232,36 +274,37 @@ def streakvalue(user, day):
             return 8 - 0.1*len(user[str(day)][2])
     return 8
 
-@bot.command(aliases=["lb"])
+@bot.hybrid_command(aliases=["lb"], brief="get osage wordle leaderboard")
 async def leaderboard(ctx, day: int = words[2]):
-    if day < 1: day = 1
-    lb = dict(sorted(streaks.items(), key=lambda item: streakvalue(item[1], day)))
-    user_ids = list(lb.keys())
-    users = []
-    for i in range(len(user_ids)):
-        user = await bot.fetch_user(int(user_ids[i]))
-        users.append(user.name)
-        if user.display_name != user.name:
-            users[i] += f" ({user.display_name})"
-    
-    message = f"**OSAGE WORDLE LEADERBOARD #{day}**"
-    for i in range(len(users[:3])):
-        value = str(streakvalue(streaks[user_ids[i]], day))
-        if value != "8":
-            message += f"\n\n{i+1}. **{users[i]}** - {value if float(value) < 7 else 'X'}/6"
-            for guess in streaks[str(user_ids[i])][str(day)][2]:
-                message += "\n> "
-                for letter in guess:
-                    letter = int(letter)
-                    if letter == 1: message += "🟩"
-                    elif letter == 2: message += "🟨"
-                    elif letter == 3: message += "⬛"
-    message += "\n"
-    for i in range(len(users[3:10])):
-        value = str(streakvalue(streaks[user_ids[i+3]], day))
-        if value != "8": message += f"\n{i+4}. **{users[i+3]}** - {value if float(value) < 7 else 'X'}/6"
-    
-    await ctx.reply(message)
+    async with ctx.typing():
+        if day < 1: day = 1
+        lb = dict(sorted(streaks.items(), key=lambda item: streakvalue(item[1], day)))
+        user_ids = list(lb.keys())
+        users = []
+        for i in range(len(user_ids)):
+            user = await bot.fetch_user(int(user_ids[i]))
+            users.append(user.name)
+            if user.display_name != user.name:
+                users[i] += f" ({user.display_name})"
+        
+        message = f"**OSAGE WORDLE LEADERBOARD #{day}**"
+        for i in range(len(users[:3])):
+            value = str(streakvalue(streaks[user_ids[i]], day))
+            if value != "8":
+                message += f"\n\n{i+1}. **{users[i]}** - {value if float(value) < 7 else 'X'}/6"
+                for guess in streaks[str(user_ids[i])][str(day)][2]:
+                    message += "\n> "
+                    for letter in guess:
+                        letter = int(letter)
+                        if letter == 1: message += "🟩"
+                        elif letter == 2: message += "🟨"
+                        elif letter == 3: message += "⬛"
+        message += "\n"
+        for i in range(len(users[3:10])):
+            value = str(streakvalue(streaks[user_ids[i+3]], day))
+            if value != "8": message += f"\n{i+4}. **{users[i+3]}** - {value if float(value) < 7 else 'X'}/6"
+        
+        await ctx.reply(message)
 
 @bot.group()
 @commands.is_owner()
