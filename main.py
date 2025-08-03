@@ -243,7 +243,7 @@ async def append(ctx, word, sauce = ""):
         json.dump(words, wordsfile, indent=4)
 
 @bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light"] = "dark"):
+async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle"] = "dark"):
     async with ctx.typing():
         if user == None: user = ctx.author
         if day < 1: day = 1
@@ -265,9 +265,14 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
             message += "\n"
             for letter in guess:
                 letter = int(letter)
-                if letter == 1: message += "🟩"
-                elif letter == 2: message += "🟨"
-                elif letter == 3: message += ("⬛" if theme == "dark" else "⬜")
+                themes = {
+                    "dark": ["🟩", "🟨", "⬛"],
+                    "light": ["🟩", "🟨", "⬜"],
+                    "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"]
+                }
+                if letter == 1: message += themes[theme][0]
+                elif letter == 2: message += themes[theme][1]
+                elif letter == 3: message += themes[theme][2]
         
         await ctx.reply(message)
 
