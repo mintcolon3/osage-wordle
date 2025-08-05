@@ -243,7 +243,7 @@ async def append(ctx, word, sauce = ""):
         json.dump(words, wordsfile, indent=4)
 
 @bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle"] = "dark"):
+async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa"] = "dark"):
     async with ctx.typing():
         if user == None: user = ctx.author
         if day < 1: day = 1
@@ -268,7 +268,8 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
                 themes = {
                     "dark": ["🟩", "🟨", "⬛"],
                     "light": ["🟩", "🟨", "⬜"],
-                    "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"]
+                    "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
+                    "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"]
                 }
                 if letter == 1: message += themes[theme][0]
                 elif letter == 2: message += themes[theme][1]
@@ -296,7 +297,7 @@ def streakvalue(user, day):
     return 8
 
 @bot.hybrid_command(aliases=["lb"], brief="get osage wordle leaderboard")
-async def leaderboard(ctx, day: int = words[2]):
+async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa"] = "dark"):
     async with ctx.typing():
         if day < 1: day = 1
         lb = dict(sorted(streaks.items(), key=lambda item: streakvalue(item[1], day)))
@@ -317,9 +318,15 @@ async def leaderboard(ctx, day: int = words[2]):
                     message += "\n> "
                     for letter in guess:
                         letter = int(letter)
-                        if letter == 1: message += "🟩"
-                        elif letter == 2: message += "🟨"
-                        elif letter == 3: message += "⬛"
+                        themes = {
+                            "dark": ["🟩", "🟨", "⬛"],
+                            "light": ["🟩", "🟨", "⬜"],
+                            "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
+                            "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"]
+                        }
+                        if letter == 1: message += themes[theme][0]
+                        elif letter == 2: message += themes[theme][1]
+                        elif letter == 3: message += themes[theme][2]
         message += "\n"
         for i in range(len(users[3:10])):
             value = str(streakvalue(streaks[user_ids[i+3]], day))
