@@ -6,6 +6,9 @@ import typing
 import random
 import wordle
 import datetime
+import os
+from PIL import Image as PILI
+from discord import app_commands
 from discord.ext import commands, tasks
 from private import token
 
@@ -243,7 +246,7 @@ async def append(ctx, word, sauce = ""):
         json.dump(words, wordsfile, indent=4)
 
 @bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa"] = "dark"):
+async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "dark"):
     async with ctx.typing():
         if user == None: user = ctx.author
         if day < 1: day = 1
@@ -261,21 +264,38 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
             return
         
         message = f"**OSAGE WORDLE #{day} FOR {user.name.upper()}**"
-        for guess in streaks[str(user.id)][str(day)][2]:
-            message += "\n"
-            for letter in guess:
-                letter = int(letter)
-                themes = {
-                    "dark": ["🟩", "🟨", "⬛"],
-                    "light": ["🟩", "🟨", "⬜"],
-                    "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
-                    "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"]
-                }
-                if letter == 1: message += themes[theme][0]
-                elif letter == 2: message += themes[theme][1]
-                elif letter == 3: message += themes[theme][2]
+        if theme == "image":
+            imagep = []
+            for guess in streaks[str(user.id)][str(day)][2]:
+                for letter in guess:
+                    letter = int(letter)
+                    if letter == 1: imagep.append("emojis/green/green.png")
+                    elif letter == 2: imagep.append("emojis/yellow/yellow.png")
+                    elif letter == 3: imagep.append("emojis/grey/greyfull.png")
+
+            image = PILI.new('RGB', (16*5, 16*(len(imagep) // 5 + (1 if len(imagep) % 5 else 0))), color='white')
+            images = [PILI.open(path).resize((16, 16)) for path in imagep]
+            for idx, img in enumerate(images): image.paste(img, ((idx % 5) * 16, (idx // 5) * 16))
+
+            image.save(f"exports\{ctx.message.id}.png")
+            await ctx.reply(message, file=discord.File(f"exports\{ctx.message.id}.png"))
+            os.remove(f"exports\{ctx.message.id}.png")
+        else:
+            for guess in streaks[str(user.id)][str(day)][2]:
+                message += "\n"
+                for letter in guess:
+                    letter = int(letter)
+                    themes = {
+                        "dark": ["🟩", "🟨", "⬛"],
+                        "light": ["🟩", "🟨", "⬜"],
+                        "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
+                        "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"]
+                    }
+                    if letter == 1: message += themes[theme][0]
+                    elif letter == 2: message += themes[theme][1]
+                    elif letter == 3: message += themes[theme][2]
         
-        await ctx.reply(message)
+            await ctx.reply(message)
 
 @bot.hybrid_command(brief="get osage wordle streak")
 async def getstreak(ctx, user: discord.User = None):
@@ -328,7 +348,7 @@ async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.L
                         elif letter == 2: message += themes[theme][1]
                         elif letter == 3: message += themes[theme][2]
         message += "\n"
-        for i in range(len(users[3:10])):
+        for i in range(len(users[3:20])):
             value = str(streakvalue(streaks[user_ids[i+3]], day))
             if value != "8": message += f"\n{i+4}. **{users[i+3]}** - {value if float(value) < 7 else 'X'}/6"
         
