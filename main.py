@@ -7,7 +7,7 @@ import random
 import wordle
 import datetime
 import os
-from PIL import Image as PILI
+from PIL import Image as PILI, ImageDraw, ImageFont
 from discord import app_commands
 from discord.ext import commands, tasks
 from private import token
@@ -246,7 +246,7 @@ async def append(ctx, word, sauce = ""):
         json.dump(words, wordsfile, indent=4)
 
 @bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "dark"):
+async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "dark", imagetheme: typing.Literal["white", "black"] = "white"):
     async with ctx.typing():
         if user == None: user = ctx.author
         if day < 1: day = 1
@@ -263,7 +263,6 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
             await ctx.reply("user has started game.")
             return
         
-        message = f"**OSAGE WORDLE #{day} FOR {user.name.upper()}**"
         if theme == "image":
             imagep = []
             for guess in streaks[str(user.id)][str(day)][2]:
@@ -273,14 +272,19 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
                     elif letter == 2: imagep.append("emojis/yellow/yellow.png")
                     elif letter == 3: imagep.append("emojis/grey/greyfull.png")
 
-            image = PILI.new('RGB', (16*5, 16*(len(imagep) // 5 + (1 if len(imagep) % 5 else 0))), color='white')
-            images = [PILI.open(path).resize((16, 16)) for path in imagep]
-            for idx, img in enumerate(images): image.paste(img, ((idx % 5) * 16, (idx // 5) * 16))
+            image = PILI.new('RGB', (32*5 + 16, 32*(len(imagep)//5) + 64), color=("white" if imagetheme == "white" else "black"))
+            images = [PILI.open(path).resize((32, 32)) for path in imagep]
+            for i, img in enumerate(images): image.paste(img, (i%5*32 + 8, i//5*32 + 56))
+
+            draw = ImageDraw.Draw(image)
+            draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("black" if imagetheme == "white" else "white"))
+            draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 20), fill=("black" if imagetheme == "white" else "white"), anchor="rd")
 
             image.save(f"exports\{ctx.message.id}.png")
-            await ctx.reply(message, file=discord.File(f"exports\{ctx.message.id}.png"))
+            await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
             os.remove(f"exports\{ctx.message.id}.png")
         else:
+            message = f"**OSAGE WORDLE #{day} FOR {user.name.upper()}**"
             for guess in streaks[str(user.id)][str(day)][2]:
                 message += "\n"
                 for letter in guess:
