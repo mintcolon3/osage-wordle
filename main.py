@@ -180,22 +180,6 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-reminder_time = datetime.time(hour=17, minute=00, tzinfo=datetime.timezone.utc)
-@tasks.loop(time=reminder_time)
-async def reminder_msg():
-    for user in streaks.keys():
-        if streaks[user]["streak"] >= 3 and streaks[user]["playing"] == 0 and streaks[user]["options"][0] == 0:
-            user_obj = await bot.fetch_user(int(user))
-            await user_obj.send(f"last chance to keep your streak of {streaks[user]['streak']} days\n-# send `!reminder` to toggle this reminder")
-
-@bot.command()
-async def reminder(ctx):
-    streaks[str(ctx.author.id)]["streak"] += 1
-    streaks[str(ctx.author.id)]["streak"] %= 2
-    await ctx.reply("done")
-    with open("streaks.json", "w") as streaksfile:
-        json.dump(streaks, streaksfile, indent=4)
-
 @bot.group()
 @commands.is_owner()
 async def admin(ctx):
@@ -358,39 +342,5 @@ async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.L
             if value != "8": message += f"\n{i+4}. **{users[i+3]}** - {value if float(value) < 7 else 'X'}/6"
         
         await ctx.reply(message)
-
-@bot.group()
-@commands.is_owner()
-async def bug(ctx):
-    return
-
-@bug.command()
-async def report(ctx, pause: int, name, fix = "none specified"):
-    words[3].append([name, fix, pause])
-    await ctx.reply("bug reported.")
-
-    for i in range(len(streaks)):
-        if streaks[str(i)]["playing"] != 0:
-            user = await bot.fetch_user(int(streaks.keys()[i]))
-            await user.send(f"a bug has been reported:\n> {name}\nfix:\n> {fix}\n{'you will still be able to play today.' if pause == 0 else 'you cannot play until this bug is fixed.'}")
-
-    with open("words.json", "w") as wordsfile:
-        json.dump(words, wordsfile, indent=4)
-
-@bug.command()
-@commands.is_owner()
-async def display(ctx):
-    bugs = ""
-    for i in range(len(words[3])): bugs += f'\n{i}:\n> name="{words[3][i][0]}"\n> fix="{words[3][i][1]}"\n> paused={words[3][i][2]}'
-    await ctx.reply(bugs)
-
-@bug.command()
-@commands.is_owner()
-async def remove(ctx, index: int = -1):
-    if index == -1: words[3] = []
-    else: words[3].pop(index)
-    await ctx.reply(f"bug #{index} removed.")
-    with open("words.json", "w") as wordsfile:
-        json.dump(words, wordsfile, indent=4)
 
 bot.run(token)
