@@ -279,7 +279,7 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
 
             draw = ImageDraw.Draw(image)
             draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("black" if imagetheme == "white" else "white"))
-            draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 20), fill=("black" if imagetheme == "white" else "white"), anchor="rd")
+            draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 16), fill=("black" if imagetheme == "white" else "white"), anchor="rd")
 
             image.save(f"exports\{ctx.message.id}.png")
             await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
