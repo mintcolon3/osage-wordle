@@ -159,6 +159,7 @@ async def on_message(message):
                         elif "red" in l: result[i] += "⬛"
                 result = "\n".join(result)
                 await message.channel.send(f"OSAGE WORDLE #{day}\n{result}")
+                await message.channel.send("-# run `!getdaily` to view this as an image")
                 print(f"\n{message.author.name} finished their game:\n{result}")
                 streaks[str(message.author.id)]["playing"] = -1
                 streaks[str(message.author.id)]["streak"] += 1
@@ -246,7 +247,7 @@ async def append(ctx, word, sauce = ""):
         json.dump(words, wordsfile, indent=4)
 
 @bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "dark", imagetheme: typing.Literal["white", "black"] = "white"):
+async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "image", imagetheme: typing.Literal["white", "black"] = "white"):
     async with ctx.typing():
         if user == None: user = ctx.author
         if day < 1: day = 1
