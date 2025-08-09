@@ -231,7 +231,7 @@ async def append(ctx, word, sauce = ""):
         json.dump(words, wordsfile, indent=4)
 
 @bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "image", imagetheme: typing.Literal["white", "black"] = "white"):
+async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "image", imagetheme: typing.Literal["white", "black", "gradient"] = "gradient"):
     async with ctx.typing():
         if user == None: user = ctx.author
         if day < 1: day = 1
@@ -256,14 +256,23 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
                     if letter == 1: imagep.append("emojis/green/green.png")
                     elif letter == 2: imagep.append("emojis/yellow/yellow.png")
                     elif letter == 3: imagep.append("emojis/grey/greyfull.png")
+            if imagetheme == "gradient":
+                image = PILI.open("bg.png").resize((32*5 + 16, 32*(len(imagep)//5) + 64))
+                images = [PILI.open(path).resize((32, 32)) for path in imagep]
+                for i, img in enumerate(images): image.paste(img, (i%5*32 + 8, i//5*32 + 56))
 
-            image = PILI.new('RGB', (32*5 + 16, 32*(len(imagep)//5) + 64), color=("white" if imagetheme == "white" else "black"))
-            images = [PILI.open(path).resize((32, 32)) for path in imagep]
-            for i, img in enumerate(images): image.paste(img, (i%5*32 + 8, i//5*32 + 56))
+                draw = ImageDraw.Draw(image)
+                draw.polygon([(7, 56), (32*5+8, 56), (32*5+8, 32*(len(imagep)//5)+56), (7, 32*(len(imagep)//5)+56)], outline="gray")
+                draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("white"), stroke_fill="gray", stroke_width=1)
+                draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 16), fill=("white"), anchor="rd", stroke_fill="gray", stroke_width=1)
+            else:
+                image = PILI.new('RGB', (32*5 + 16, 32*(len(imagep)//5) + 64), color=("white" if imagetheme == "white" else "black"))
+                images = [PILI.open(path).resize((32, 32)) for path in imagep]
+                for i, img in enumerate(images): image.paste(img, (i%5*32 + 8, i//5*32 + 56))
 
-            draw = ImageDraw.Draw(image)
-            draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("black" if imagetheme == "white" else "white"))
-            draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 16), fill=("black" if imagetheme == "white" else "white"), anchor="rd")
+                draw = ImageDraw.Draw(image)
+                draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("black" if imagetheme == "white" else "white"))
+                draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 16), fill=("black" if imagetheme == "white" else "white"), anchor="rd")
 
             image.save(f"exports\{ctx.message.id}.png")
             await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
