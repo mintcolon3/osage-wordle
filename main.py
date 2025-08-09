@@ -257,6 +257,9 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
                     elif letter == 2: imagep.append("emojis/yellow/yellow.png")
                     elif letter == 3: imagep.append("emojis/grey/greyfull.png")
             if imagetheme == "gradient":
+                username = user.name.upper()
+                if len(username) > 15: username = f"{username[:15]}..."
+
                 image = PILI.open("bg.png").resize((32*5 + 16, 32*(len(imagep)//5) + 64))
                 images = [PILI.open(path).resize((32, 32)) for path in imagep]
                 for i, img in enumerate(images): image.paste(img, (i%5*32 + 8, i//5*32 + 56))
@@ -264,7 +267,7 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
                 draw = ImageDraw.Draw(image)
                 draw.polygon([(7, 56), (32*5+8, 56), (32*5+8, 32*(len(imagep)//5)+56), (7, 32*(len(imagep)//5)+56)], outline="gray")
                 draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("white"), stroke_fill="gray", stroke_width=1)
-                draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 16), fill=("white"), anchor="rd", stroke_fill="gray", stroke_width=1)
+                draw.text((5*32+8,56), username, font=ImageFont.truetype("sdv.ttf", 16), fill=("white"), anchor="rd", stroke_fill="gray", stroke_width=1)
             else:
                 image = PILI.new('RGB', (32*5 + 16, 32*(len(imagep)//5) + 64), color=("white" if imagetheme == "white" else "black"))
                 images = [PILI.open(path).resize((32, 32)) for path in imagep]
