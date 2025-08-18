@@ -65,7 +65,7 @@ async def on_message(message):
     day = words[2]
     word = str(words[1][0 if day == 13 else (day-1)%len(words[1])])
     letters = len(word)
-    gametext = f"# OSAGE WORDLE #{day}\n{''.join(emojis.letters[0][:10])}\n{''.join(emojis.letters[0][10:20])}\n{''.join(emojis.letters[0][20:])}\n{'-'*15}\n{emojis.blank*letters}"
+    gametext = f"# {'OSAGE WORDLE' if message.author.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}\n{''.join(emojis.letters[0][:10])}\n{''.join(emojis.letters[0][10:20])}\n{''.join(emojis.letters[0][20:])}\n{'-'*15}\n{emojis.blank*letters}"
     
     if str(message.author.id) in streaks.keys():
         if streaks[str(message.author.id)]["playing"] == 0:
@@ -133,7 +133,7 @@ async def on_message(message):
             for i in range(10): keyboard[1] += emojis.letters[int(streaks[str(message.author.id)][str(day)][0][i+10])][i+10]
             for i in range(6): keyboard[2] += emojis.letters[int(streaks[str(message.author.id)][str(day)][0][i+20])][i+20]
             keyboard = "\n".join(keyboard)
-            gametext = f"# OSAGE WORDLE #{day}\n{keyboard}\n{'-'*15}\n"
+            gametext = f"# {'OSAGE WORDLE' if message.author.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}\n{keyboard}\n{'-'*15}\n"
             prev_guesses = game.content.split("\n")[5:]
             if emojis.blank not in prev_guesses[0]: gametext += ("\n".join(prev_guesses) + "\n")
             else: prev_guesses = []
@@ -158,7 +158,7 @@ async def on_message(message):
                         elif "yellow" in l: result[i] += "🟨"
                         elif "red" in l: result[i] += "⬛"
                 result = "\n".join(result)
-                await message.channel.send(f"OSAGE WORDLE #{day}\n{result}")
+                await message.channel.send(f"{'OSAGE WORDLE' if message.author.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}\n{result}")
                 await message.channel.send("-# run `!getdaily` to view this as an image")
                 print(f"\n{message.author.name} finished their game:\n{result}")
                 streaks[str(message.author.id)]["playing"] = -1
@@ -281,7 +281,7 @@ async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.
             await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
             os.remove(f"exports\{ctx.message.id}.png")
         else:
-            message = f"**OSAGE WORDLE #{day} FOR {user.name.upper()}**"
+            message = f"**{'OSAGE WORDLE' if user.id != 699418679963811870 else 'OSAGE WORLDE'} #{day} FOR {user.name.upper()}**"
             for guess in streaks[str(user.id)][str(day)][2]:
                 message += "\n"
                 for letter in guess:
