@@ -2,6 +2,24 @@ from PIL import Image as PILI, ImageDraw, ImageFont
 import discord
 import os
 
+textthemes = {
+    "dark": ["🟩", "🟨", "⬛"],
+    "light": ["🟩", "🟨", "⬜"],
+    "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
+    "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"],
+    "inaba": ["<:greeninaba:1407789263340179476>", "<:yellowinaba:1407789238098984980>", "<:greyinaba:1407789205299396921>"]
+}
+imagethemes = {
+    "dark": [r"images\backgrounds\dark.png", "#FFFFFFDC", "#000000FF"],
+    "light": [r"images\backgrounds\light.png", "#0000008C", "#FFFFFFFF"],
+    "gradient": [r"images\backgrounds\gradient.png", "#0000008C", "#FFFFFFFF"]
+}
+gamethemes = {
+    "osagle": ["emojis/green/green.png", "emojis/yellow/yellow.png", "emojis/grey/greyfull.png"],
+    "bwaa": ["emojis/green/greenbwaa.png", "emojis/yellow/yellowbwaa.png", "emojis/grey/greybwaa.png"],
+    "inaba": ["emojis/green/greeninaba.png", "emojis/yellow/yellowinaba.png", "emojis/grey/greyinaba.png"]
+}
+
 def gentext(game, theme):
     output = [""]*len(game)
     for i, guess in enumerate(game):
