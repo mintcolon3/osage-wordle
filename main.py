@@ -5,10 +5,9 @@ import string
 import typing
 import random
 import wordle
-import datetime
 import os
+import gen
 from PIL import Image as PILI, ImageDraw, ImageFont
-from discord import app_commands
 from discord.ext import commands, tasks
 from private import token
 
@@ -150,17 +149,13 @@ async def on_message(message):
                 gametext = game.content + f"\n\nThe word was `{words[1][0 if day == 13 else (day-1)%len(words[1])]}`" + f"\n{sauce}"
                 await game.edit(content=gametext)
 
-                prev_guesses.append(guess)
-                result = [""]*streaks[str(message.author.id)]["playing"]
-                for i in range(len(prev_guesses)):
-                    for l in prev_guesses[i].split("><:"):
-                        if "green" in l: result[i] += "🟩"
-                        elif "yellow" in l: result[i] += "🟨"
-                        elif "red" in l: result[i] += "⬛"
-                result = "\n".join(result)
-                await message.channel.send(f"{'OSAGE WORDLE' if message.author.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}\n{result}")
-                await message.channel.send("-# run `!getdaily` to view this as an image")
-                print(f"\n{message.author.name} finished their game:\n{result}")
+                image = await gen.genimg(streaks[str(message.author.id)][str(day)][2], message.author, day, [r"images\backgrounds\gradient.png", "#0000008C", "#FFFFFFFF"], ["emojis/green/green.png", "emojis/yellow/yellow.png", "emojis/grey/greyfull.png"])
+                image.save(f"exports\{message.id}.png")
+                await message.channel.send(file=discord.File(f"exports\{message.id}.png"))
+                await message.channel.send("-# run `!get` to view this as text")
+                os.remove(f"exports\{message.id}.png")
+
+                print(f"\n{message.author.name} finished their game:\n{gen.gentext(streaks[str(message.author.id)][str(day)][2], ['🟩', '🟨', '⬛'])}")
                 streaks[str(message.author.id)]["playing"] = -1
                 streaks[str(message.author.id)]["streak"] += 1
             else:
@@ -230,73 +225,9 @@ async def append(ctx, word, sauce = ""):
     with open("words.json", "w") as wordsfile:
         json.dump(words, wordsfile, indent=4)
 
-@bot.hybrid_command(brief="get osage wordle diagram")
-async def getdaily(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "image"] = "image", imagetheme: typing.Literal["white", "black", "gradient"] = "gradient"):
-    async with ctx.typing():
-        if user == None: user = ctx.author
-        if day < 1: day = 1
-        if str(user.id) not in streaks.keys():
-            await ctx.reply("user has never played osage wordle.")
-            return
-        elif str(day) not in streaks[str(user.id)].keys():
-            await ctx.reply("user has not played that day.")
-            return
-        elif len(streaks[str(user.id)][str(day)]) < 3:
-            await ctx.reply("not available.")
-            return
-        elif len(streaks[str(user.id)][str(day)][2]) == 0:
-            await ctx.reply("user has started game.")
-            return
-        
-        if theme == "image":
-            imagep = []
-            for guess in streaks[str(user.id)][str(day)][2]:
-                for letter in guess:
-                    letter = int(letter)
-                    if letter == 1: imagep.append("emojis/green/green.png")
-                    elif letter == 2: imagep.append("emojis/yellow/yellow.png")
-                    elif letter == 3: imagep.append("emojis/grey/greyfull.png")
-            if imagetheme == "gradient":
-                username = user.name.upper()
-                if len(username) > 15: username = f"{username[:15]}..."
-
-                image = PILI.open("bg.png").resize((32*5 + 16, 32*(len(imagep)//5) + 64))
-                images = [PILI.open(path).resize((32, 32)) for path in imagep]
-                for i, img in enumerate(images): image.paste(img, (i%5*32 + 8, i//5*32 + 56))
-
-                draw = ImageDraw.Draw(image)
-                draw.polygon([(7, 56), (32*5+8, 56), (32*5+8, 32*(len(imagep)//5)+56), (7, 32*(len(imagep)//5)+56)], outline="gray")
-                draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("white"), stroke_fill="gray", stroke_width=1)
-                draw.text((5*32+8,56), username, font=ImageFont.truetype("sdv.ttf", 16), fill=("white"), anchor="rd", stroke_fill="gray", stroke_width=1)
-            else:
-                image = PILI.new('RGB', (32*5 + 16, 32*(len(imagep)//5) + 64), color=("white" if imagetheme == "white" else "black"))
-                images = [PILI.open(path).resize((32, 32)) for path in imagep]
-                for i, img in enumerate(images): image.paste(img, (i%5*32 + 8, i//5*32 + 56))
-
-                draw = ImageDraw.Draw(image)
-                draw.text((5,0), f"#{day}", font=ImageFont.truetype("sdv.ttf", 48), fill=("black" if imagetheme == "white" else "white"))
-                draw.text((5*32+8,56), user.name.upper(), font=ImageFont.truetype("sdv.ttf", 16), fill=("black" if imagetheme == "white" else "white"), anchor="rd")
-
-            image.save(f"exports\{ctx.message.id}.png")
-            await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
-            os.remove(f"exports\{ctx.message.id}.png")
-        else:
-            message = f"**{'OSAGE WORDLE' if user.id != 699418679963811870 else 'OSAGE WORLDE'} #{day} FOR {user.name.upper()}**"
-            for guess in streaks[str(user.id)][str(day)][2]:
-                message += "\n"
-                for letter in guess:
-                    letter = int(letter)
-                    themes = {
-                        "dark": ["🟩", "🟨", "⬛"],
-                        "light": ["🟩", "🟨", "⬜"],
-                        "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
-                        "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"]
-                    }
-                    if letter == 1: message += themes[theme][0]
-                    elif letter == 2: message += themes[theme][1]
-                    elif letter == 3: message += themes[theme][2]
-        
-            await ctx.reply(message)
+@bot.command(hidden=True)
+async def getdaily(ctx):
+    await ctx.reply("the getdaily command has been replaced with get and getimage.\n\nuse `!get`, `!g` or `/get` for text-based themes\nuse `!getimage`, `!getimg`, `!gi` or `/get` for image-based themes\n\nif the new commands arent working or you dont understand, dm minty")
 
 @bot.hybrid_command(brief="get osage wordle streak")
 async def getstreak(ctx, user: discord.User = None):
@@ -354,5 +285,52 @@ async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.L
             if value != "8": message += f"\n{i+4}. **{users[i+3]}** - {value if float(value) < 7 else 'X'}/6"
         
         await ctx.reply(message)
+
+@bot.hybrid_command(aliases=["g"], brief="generate text representation of a game")
+async def get(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], username: typing.Optional[bool] = True,
+              theme: typing.Literal["dark", "light", "osagle", "bwaa", "inaba"] = "dark"):
+    async with ctx.typing():
+        themes = {
+            "dark": ["🟩", "🟨", "⬛"],
+            "light": ["🟩", "🟨", "⬜"],
+            "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
+            "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"],
+            "inaba": ["<:greeninaba:1407789263340179476>", "<:yellowinaba:1407789238098984980>", "<:greyinaba:1407789205299396921>"]
+        }
+        if user == None: user = ctx.author
+        if day < 1: day = 1
+        if str(user.id) not in streaks.keys(): await ctx.reply("user has never played osage wordle."); return
+        elif str(day) not in streaks[str(user.id)].keys(): await ctx.reply("user has not played that day."); return
+        elif len(streaks[str(user.id)][str(day)]) < 3: await ctx.reply("not available."); return
+        elif len(streaks[str(user.id)][str(day)][2]) == 0: await ctx.reply("user has started game."); return
+        await ctx.reply(f"{'OSAGE WORDLE' if user.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}{f' FOR {user.name.upper()}' if username else ''}\n{gen.gentext(streaks[str(user.id)][str(day)][2], themes[theme])}")
+
+@bot.hybrid_command(aliases=["getimg", "gi"], brief="generate image representation of a game")
+async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2],
+                   theme: typing.Literal["dark", "light", "gradient"] = "gradient",
+                   guesstheme: typing.Literal["osagle", "bwaa", "inaba"] = "osagle"):
+    async with ctx.typing():
+        themes = {
+            "dark": [r"images\backgrounds\dark.png", "#FFFFFFDC", "#000000FF"],
+            "light": [r"images\backgrounds\light.png", "#0000008C", "#FFFFFFFF"],
+            "gradient": [r"images\backgrounds\gradient.png", "#0000008C", "#FFFFFFFF"]
+        }
+        guessthemes = {
+            "osagle": ["emojis/green/green.png", "emojis/yellow/yellow.png", "emojis/grey/greyfull.png"],
+            "bwaa": ["emojis/green/greenbwaa.png", "emojis/yellow/yellowbwaa.png", "emojis/grey/greybwaa.png"],
+            "inaba": ["emojis/green/greeninaba.png", "emojis/yellow/yellowinaba.png", "emojis/grey/greyinaba.png"]
+        }
+        if user == None: user = ctx.author
+        if day < 1: day = 1
+        if str(user.id) not in streaks.keys(): await ctx.reply("user has never played osage wordle."); return
+        elif str(day) not in streaks[str(user.id)].keys(): await ctx.reply("user has not played that day."); return
+        elif len(streaks[str(user.id)][str(day)]) < 3: await ctx.reply("not available."); return
+        elif len(streaks[str(user.id)][str(day)][2]) == 0: await ctx.reply("user has started game."); return
+        
+        image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day, themes[theme], guessthemes[guesstheme])
+        image.save(f"exports\{ctx.message.id}.png")
+        await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
+        os.remove(f"exports\{ctx.message.id}.png")
+
 
 bot.run(token)
