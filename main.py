@@ -244,7 +244,7 @@ def streakvalue(user, day):
     return 8
 
 @bot.hybrid_command(aliases=["lb"], brief="get osage wordle leaderboard")
-async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa"] = "dark"):
+async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "inaba"] = "dark"):
     async with ctx.typing():
         if day < 1: day = 1
         lb = dict(sorted(streaks.items(), key=lambda item: streakvalue(item[1], day)))
@@ -261,20 +261,9 @@ async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.L
             value = str(streakvalue(streaks[user_ids[i]], day))
             if value != "8":
                 message += f"\n\n{i+1}. **{users[i]}** - {value if float(value) < 7 else 'X'}/6"
-                for guess in streaks[str(user_ids[i])][str(day)][2]:
-                    message += "\n> "
-                    for letter in guess:
-                        letter = int(letter)
-                        themes = {
-                            "dark": ["🟩", "🟨", "⬛"],
-                            "light": ["🟩", "🟨", "⬜"],
-                            "osagle": ["<:green:1401642959782416414>", "<:yellow:1401643202817294388>", "<:grey:1401644438819831828>"],
-                            "bwaa": ["<:greenbwaa:1401808521430958120>", "<:yellowbwaa:1401808549679599758>", "<:greybwaa:1401808487830257785>"]
-                        }
-                        if letter == 1: message += themes[theme][0]
-                        elif letter == 2: message += themes[theme][1]
-                        elif letter == 3: message += themes[theme][2]
-        message += "\n"
+                game = gen.gentext(streaks[str(user_ids[i])][str(day)][2], gen.textthemes[theme])
+                game = game.split("\n")
+                for guess in game: message += f"\n> {guess}"
         for i in range(len(users[3:20])):
             value = str(streakvalue(streaks[user_ids[i+3]], day))
             if value != "8": message += f"\n{i+4}. **{users[i+3]}** - {value if float(value) < 7 else 'X'}/6"
