@@ -271,9 +271,10 @@ async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.L
         await ctx.reply(message)
 
 @bot.hybrid_command(aliases=["g"], brief="generate text representation of a game")
-async def get(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2], username: typing.Optional[bool] = True,
+async def get(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = None, username: typing.Optional[bool] = True,
               theme: typing.Literal["dark", "light", "osagle", "bwaa", "inaba"] = "dark"):
     async with ctx.typing():
+        if day == None: day = words[2]
         if user == None: user = ctx.author
         if day < 1: day = 1
         if str(user.id) not in streaks.keys(): await ctx.reply("user has never played osage wordle."); return
@@ -283,10 +284,11 @@ async def get(ctx, user: typing.Optional[discord.User] = None, day: typing.Optio
         await ctx.reply(f"{'OSAGE WORDLE' if user.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}{f' FOR {user.name.upper()}' if username else ''}\n{gen.gentext(streaks[str(user.id)][str(day)][2], gen.textthemes[theme])}")
 
 @bot.hybrid_command(aliases=["getimg", "gi"], brief="generate image representation of a game")
-async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = words[2],
+async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = None,
                    theme: typing.Literal["dark", "light", "gradient"] = "gradient",
                    gametheme: typing.Literal["osagle", "bwaa", "inaba"] = "osagle"):
     async with ctx.typing():
+        if day == None: day = words[2]
         if user == None: user = ctx.author
         if day < 1: day = 1
         if str(user.id) not in streaks.keys(): await ctx.reply("user has never played osage wordle."); return
