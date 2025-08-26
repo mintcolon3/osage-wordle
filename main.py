@@ -370,36 +370,47 @@ async def get(ctx,
 
 @bot.hybrid_command(aliases=["getimg", "gi"],
                     brief="generate image representation of a game")
-async def getimage(ctx,
-                   user: typing.Optional[discord.User] = None,
-                   day: typing.Optional[int] = None,
-                   theme: typing.Literal["dark", "light",
-                                         "gradient"] = "gradient",
-                   gametheme: typing.Literal["osagle", "bwaa",
-                                             "inaba"] = "osagle"):
+async def getimage(
+    ctx,
+    user: typing.Optional[discord.User] = None,
+    day: typing.Optional[int] = None,
+    theme: typing.Literal["dark", "light", "gradient"] = "gradient",
+    gametheme: typing.Literal["osagle", "bwaa", "inaba"] = "osagle"
+):
     async with ctx.typing():
-        if day == None: day = words[2]
-        if user == None: user = ctx.author
-        if day < 1: day = 1
-        if str(user.id) not in streaks.keys():
-            await ctx.reply("user has never played osage wordle.")
-            return
-        elif str(day) not in streaks[str(user.id)].keys():
-            await ctx.reply("user has not played that day.")
-            return
-        elif len(streaks[str(user.id)][str(day)]) < 3:
-            await ctx.reply("not available.")
-            return
-        elif len(streaks[str(user.id)][str(day)][2]) == 0:
-            await ctx.reply("user has started game.")
-            return
+        day = words[2] if day is None else day
+        user = ctx.author if user is None else user
+        if day < 1:
+            day = 1
 
-        image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day,
-                                 gen.imagethemes[theme],
-                                 gen.gamethemes[gametheme])
-        image.save(f"exports\{ctx.message.id}.png")
-        await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
-        os.remove(f"exports\{ctx.message.id}.png")
+        uid = str(user.id)
+        if uid not in streaks:
+            return await ctx.reply("user has never played osage wordle.")
+
+        day_str = str(day)
+        if day_str not in streaks[uid]:
+            return await ctx.reply("user has not played that day.")
+
+        day_data = streaks[uid][day_str]
+        if len(day_data) < 3:
+            return await ctx.reply("not available.")
+
+        if not day_data[2]:
+            return await ctx.reply("user has started game.")
+
+        image = await gen.genimg(
+            day_data[2],
+            user,
+            day,
+            gen.imagethemes[theme],
+            gen.gamethemes[gametheme]
+        )
+
+        path = f"exports/{ctx.message.id}.png"
+        image.save(path)
+        await ctx.reply(file=discord.File(path))
+        os.remove(path)
+
 
 
 bot.run(token)
