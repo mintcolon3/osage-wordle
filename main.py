@@ -341,31 +341,40 @@ async def leaderboard(ctx,
 
 @bot.hybrid_command(aliases=["g"],
                     brief="generate text representation of a game")
-async def get(ctx,
-              user: typing.Optional[discord.User] = None,
-              day: typing.Optional[int] = None,
-              username: typing.Optional[bool] = True,
-              theme: typing.Literal["dark", "light", "osagle", "bwaa",
-                                    "inaba"] = "dark"):
+async def get(
+    ctx,
+    user: typing.Optional[discord.User] = None,
+    day: typing.Optional[int] = None,
+    username: typing.Optional[bool] = True,
+    theme: typing.Literal["dark", "light", "osagle", "bwaa", "inaba"] = "dark"
+):
     async with ctx.typing():
-        if day == None: day = words[2]
-        if user == None: user = ctx.author
-        if day < 1: day = 1
-        if str(user.id) not in streaks.keys():
-            await ctx.reply("user has never played osage wordle.")
-            return
-        elif str(day) not in streaks[str(user.id)].keys():
-            await ctx.reply("user has not played that day.")
-            return
-        elif len(streaks[str(user.id)][str(day)]) < 3:
-            await ctx.reply("not available.")
-            return
-        elif len(streaks[str(user.id)][str(day)][2]) == 0:
-            await ctx.reply("user has started game.")
-            return
-        await ctx.reply(
-            f"{'OSAGE WORDLE' if user.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}{f' FOR {user.name.upper()}' if username else ''}\n{gen.gentext(streaks[str(user.id)][str(day)][2], gen.textthemes[theme])}"
-        )
+        day = words[2] if day is None else day
+        user = ctx.author if user is None else user
+        if day < 1:
+            day = 1
+
+        uid = str(user.id)
+        day_str = str(day)
+
+        if uid not in streaks:
+            return await ctx.reply("user has never played osage wordle.")
+        if day_str not in streaks[uid]:
+            return await ctx.reply("user has not played that day.")
+        day_data = streaks[uid][day_str]
+        if len(day_data) < 3:
+            return await ctx.reply("not available.")
+        if not day_data[2]:
+            return await ctx.reply("user has started game.")
+
+        title = "OSAGE WORDLE" if user.id != 699418679963811870 else "OSAGE WORLDE"
+        title += f" #{day}"
+        if username:
+            title += f" FOR {user.name.upper()}"
+
+        content = gen.gentext(day_data[2], gen.textthemes[theme])
+        await ctx.reply(f"{title}\n{content}")
+
 
 
 @bot.hybrid_command(aliases=["getimg", "gi"],
