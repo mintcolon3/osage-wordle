@@ -252,8 +252,9 @@ def streakvalue(user, day):
     return 8
 
 @bot.hybrid_command(aliases=["lb"], brief="get osage wordle leaderboard")
-async def leaderboard(ctx, day: typing.Optional[int] = words[2], theme: typing.Literal["dark", "light", "osagle", "bwaa", "inaba"] = "dark"):
+async def leaderboard(ctx, day: typing.Optional[int] = None, theme: typing.Literal["dark", "light", "osagle", "bwaa", "inaba"] = "dark"):
     async with ctx.typing():
+        if day == None: day = words[2]
         if day < 1: day = 1
         lb = dict(sorted(streaks.items(), key=lambda item: streakvalue(item[1], day)))
         user_ids = list(lb.keys())
