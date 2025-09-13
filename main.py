@@ -25,7 +25,7 @@ async def on_ready():
     print("syncing commands...")
     await bot.tree.sync()
     print(f'Logged in as {bot.user.name}\n')
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="INABAKUMORI | Hadal Abyss Zone"), status=discord.Status.online)
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Heat Abwaanormal"), status=discord.Status.online)
     # await bot.change_presence(status=discord.Status.invisible)
 
 @bot.event
@@ -66,6 +66,12 @@ async def on_message(message):
     letters = len(word)
     gametext = f"# {'OSAGE WORDLE' if message.author.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}\n{''.join(emojis.letters[0][:10])}\n{''.join(emojis.letters[0][10:20])}\n{''.join(emojis.letters[0][20:])}\n{'-'*15}\n{emojis.blank*letters}"
     
+    if message.content.lower() == "stop":
+        words[5].append(message.author.id)
+        await message.reply("stopped reminders for today.")
+        with open("words.json", "w") as wordsfile:
+            json.dump(words, wordsfile, indent=4)
+
     if str(message.author.id) in streaks.keys():
         if streaks[str(message.author.id)]["playing"] == 0:
             if content != "start":
@@ -156,7 +162,8 @@ async def on_message(message):
             else:
                 streaks[str(message.author.id)]["playing"] += 1
         else:
-            await message.channel.send("you have already played today.")
+            if message.author.id not in words[5]: await message.channel.send("you have already played today.\n-# send `stop` to stop these messages for today")
+
     else:
         if content != "start":
             await message.channel.send("send `start` to start a game.")
@@ -180,6 +187,7 @@ async def reset(ctx):
     async with ctx.typing():
         global words, streaks
         words[2] += 1
+        words[5] = []
         if (words[2]-1)%len(words[1]) == 0: random.shuffle(words[1])
         for user in streaks.keys():
             if streaks[user]["playing"] != -1: streaks[user]["streak"] = 0
