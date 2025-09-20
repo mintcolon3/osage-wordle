@@ -9,11 +9,15 @@ import os
 import gen
 from PIL import Image as PILI, ImageDraw, ImageFont
 from discord.ext import commands, tasks
+from discord import app_commands
 from private import token
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix=("!"), intents=intents)
+bot = commands.Bot(
+    command_prefix=("!"), intents=intents,
+    allowed_installs=app_commands.AppInstallationType(guild=True, user=True),
+    allowed_contexts=app_commands.AppCommandContext(guild=True, private_channel=True, dm_channel=True))
 
 with open("streaks.json") as streaksfile:
     streaks = json.load(streaksfile)
@@ -279,7 +283,11 @@ async def leaderboard(ctx, day: typing.Optional[int] = None, theme: typing.Liter
         
         await ctx.reply(message)
 
-@bot.hybrid_command(aliases=["g"], brief="generate text representation of a game")
+@bot.tree.command(name="bwaa")
+async def bwaa(interaction: discord.Interaction):
+    await interaction.response.send_message("bwaa")
+
+@bot.hybrid_command(name="get", aliases=["g"], brief="generate text representation of a game")
 async def get(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = None, username: typing.Optional[bool] = True,
               theme: typing.Literal["dark", "light", "osagle", "bwaa", "inaba"] = "dark"):
     async with ctx.typing():
