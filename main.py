@@ -93,7 +93,8 @@ async def on_message(message):
 
     await bot.process_commands(message)
 
-@bot.hybrid_command()
+@bot.hybrid_command(brief="Start a game of osage wordle")
+@app_commands.allowed_installs(guilds=False, users=True)
 async def start(ctx):
     global streaks
     output = await wgame.start(ctx.author, words, streaks)
@@ -154,10 +155,6 @@ async def append(ctx, word, sauce = ""):
     await ctx.reply("added.")
     with open("words.json", "w") as wordsfile:
         json.dump(words, wordsfile, indent=4)
-
-@bot.command(hidden=True)
-async def getdaily(ctx):
-    await ctx.reply("the getdaily command has been replaced with get and getimage.\n\nuse `!get`, `!g` or `/get` for text-based themes\nuse `!getimage`, `!getimg`, `!gi` or `/get` for image-based themes\n\nif the new commands arent working or you dont understand, dm minty")
 
 @bot.hybrid_command(brief="get osage wordle streak")
 async def getstreak(ctx, user: discord.User = None):
