@@ -7,10 +7,11 @@ import random
 import wordle
 import os
 import gen
+import wgame
 from PIL import Image as PILI, ImageDraw, ImageFont
 from discord.ext import commands, tasks
 from discord import app_commands
-from private import token
+import private
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -29,7 +30,8 @@ async def on_ready():
     print("syncing commands...")
     await bot.tree.sync()
     print(f'Logged in as {bot.user.name}\n')
-    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Heat Abwaanormal"), status=discord.Status.online)
+    # await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Heat Abwaanormal"), status=discord.Status.online)
+    await bot.change_presence(activity=discord.CustomActivity(name="log"), status=discord.Status.online)
     # await bot.change_presence(status=discord.Status.invisible)
 
 @bot.event
@@ -41,6 +43,10 @@ async def on_command_error(ctx, error):
 
 @bot.event
 async def on_message(message):
+    await private.log(bot, message)
+    await private.chop(bot, message)
+
+
     # if message.author.id != 1170381506460536905: return
 
     if message.content.startswith('!^ ') and message.author.id == 1170381506460536905:
@@ -69,117 +75,34 @@ async def on_message(message):
     word = str(words[1][0 if day == 13 else (day-1)%len(words[1])])
     letters = len(word)
     gametext = f"# {'OSAGE WORDLE' if message.author.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}\n{''.join(emojis.letters[0][:10])}\n{''.join(emojis.letters[0][10:20])}\n{''.join(emojis.letters[0][20:])}\n{'-'*15}\n{emojis.blank*letters}"
-    
-    if message.content.lower() == "stop":
-        words[5].append(message.author.id)
-        await message.reply("stopped reminders for today.")
-        with open("words.json", "w") as wordsfile:
-            json.dump(words, wordsfile, indent=4)
 
-    if str(message.author.id) in streaks.keys():
-        if streaks[str(message.author.id)]["playing"] == 0:
-            if content != "start":
-                await message.channel.send("send `start` to start a game.")
-                return
-            
-            """if len(words[3]) != 0:
-                for bug in words[3]:
-                    await message.author.send(f"a bug has been reported:\n> {name}\nfix:\n> {fix}\n{'you will still be able to play today.' if pause == 0 else 'you cannot play until this bug is fixed.'}")
-            """
-
-            game = await message.channel.send(gametext)
-            streaks[str(message.author.id)]["playing"] = 1
-            streaks[str(message.author.id)][str(day)] = [[0]*26, game.id, []]
-        elif streaks[str(message.author.id)]["playing"] != -1:
-            if len(content) != 5 or not content.isalpha():
-                await message.channel.send("guesses must be 5 letters.")
-                return
-            wordlegame = wordle.Wordle(word = 'bwaaa', real_words = True)
-            wordleresponse = wordlegame.send_guess(content)
-
-            if content not in words[1] and content not in words[0] and wordleresponse == "That's not a real word.":
-                await message.add_reaction("❌")
-                return
-            
-            
-            game = await message.channel.fetch_message(streaks[str(message.author.id)][str(day)][1])
-            
-            guess = ""
-            guessval = ""
-            word = list(word)
-            for i in range(5):
-                letter = content[i]
-                if streaks[str(message.author.id)][str(day)][0][string.ascii_lowercase.index(letter)] == 0: streaks[str(message.author.id)][str(day)][0][string.ascii_lowercase.index(letter)] = 3
-                if letter == word[i]:
-                    value = 1
-                    word[i] = "1"
-                    streaks[str(message.author.id)][str(day)][0][string.ascii_lowercase.index(letter)] = 1
-                elif letter in word:
-                    value = 3
-                    j = 0
-                    streaks[str(message.author.id)][str(day)][0][string.ascii_lowercase.index(letter)] = 1
-                    while j < 5:
-                        if letter == word[j] and content[j] != word[j]:
-                            word[j] = "1"
-                            value = 2
-                            j = 5
-                        else:
-                            j += 1 
-                else: value = 3
-                guess += emojis.letters[value][string.ascii_lowercase.index(letter)]
-                guessval += str(value)
-            word = "".join(word)
-            streaks[str(message.author.id)][str(day)][2].append(list(guessval))
-            print(f"\n{message.author.name} just guessed: {gen.gentext([list(guessval)], gen.textthemes['dark'])}")
-
-            keyboard = [""]*3
-            for i in range(10): keyboard[0] += emojis.letters[int(streaks[str(message.author.id)][str(day)][0][i])][i]
-            for i in range(10): keyboard[1] += emojis.letters[int(streaks[str(message.author.id)][str(day)][0][i+10])][i+10]
-            for i in range(6): keyboard[2] += emojis.letters[int(streaks[str(message.author.id)][str(day)][0][i+20])][i+20]
-            keyboard = "\n".join(keyboard)
-            gametext = f"# {'OSAGE WORDLE' if message.author.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}\n{keyboard}\n{'-'*15}\n"
-            prev_guesses = game.content.split("\n")[5:]
-            if emojis.blank not in prev_guesses[0]: gametext += ("\n".join(prev_guesses) + "\n")
-            else: prev_guesses = []
-            gametext += guess
-            await game.edit(content=gametext)
-
-            if guessval == "11111" or streaks[str(message.author.id)]["playing"] == 6:
-                game = await message.channel.fetch_message(streaks[str(message.author.id)][str(day)][1])
-
-                saucestring = words[4][words[1][(day-1)%len(words[1])]]
-                if saucestring.startswith("https") or saucestring == "": sauce = saucestring
-                else: sauce = f"https://www.youtube.com/watch?v={saucestring}"
-                
-                gametext = game.content + f"\n\nThe word was `{words[1][0 if day == 13 else (day-1)%len(words[1])]}`" + f"\n{sauce}"
-                await game.edit(content=gametext)
-
-                image = await gen.genimg(streaks[str(message.author.id)][str(day)][2], message.author, day, gen.imagethemes["gradient"], gen.gamethemes["osagle"])
-                image.save(f"exports\{message.id}.png")
-                await message.channel.send(file=discord.File(f"exports\{message.id}.png"))
-                await message.channel.send("-# run `!get` to view this as text")
-                os.remove(f"exports\{message.id}.png")
-
-                print(f"\n{message.author.name} finished their game:\n{gen.gentext(streaks[str(message.author.id)][str(day)][2], gen.textthemes['dark'])}")
-                streaks[str(message.author.id)]["playing"] = -1
-                streaks[str(message.author.id)]["streak"] += 1
-            else:
-                streaks[str(message.author.id)]["playing"] += 1
-        else:
-            if message.author.id not in words[5]: await message.channel.send("you have already played today.\n-# send `stop` to stop these messages for today")
-
-    else:
-        if content != "start":
-            await message.channel.send("send `start` to start a game.")
+    if content == "start":
+        output = await wgame.start(message.author, words, streaks)
+        if output != False:
+            streaks = output
+            with open("streaks.json", "w") as streaksfile: json.dump(streaks, streaksfile, indent=4)
             return
-        
-        game = await message.channel.send(gametext)
-        streaks[str(message.author.id)] = {"options": [0], "streak": 0, "playing" : 1, str(day) : [[0]*26, game.id, []]}
-    
+
+    if streaks[str(message.author.id)]["playing"] != -1:
+        output = await wgame.guess(message, words, streaks)
+        if output != False:
+            streaks = output
+
     with open("streaks.json", "w") as streaksfile:
         json.dump(streaks, streaksfile, indent=4)
 
     await bot.process_commands(message)
+
+@bot.hybrid_command()
+async def start(ctx):
+    global streaks
+    output = await wgame.start(ctx.author, words, streaks)
+    if output == False:
+        await ctx.reply("You have already started a game today.", ephemeral=True)
+    else:
+        streaks = output
+        with open("streaks.json", "w") as streaksfile: json.dump(streaks, streaksfile, indent=4)
+        await ctx.reply("A game has started, check your dms.", ephemeral=True)
 
 @bot.group()
 @commands.is_owner()
@@ -319,4 +242,4 @@ async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.
         os.remove(f"exports\{ctx.message.id}.png")
 
 
-bot.run(token)
+bot.run(private.token)
