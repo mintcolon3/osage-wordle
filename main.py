@@ -94,7 +94,6 @@ async def on_message(message):
     await bot.process_commands(message)
 
 @bot.hybrid_command(brief="Start a game of osage wordle")
-@app_commands.allowed_installs(guilds=False, users=True)
 async def start(ctx):
     global streaks
     output = await wgame.start(ctx.author, words, streaks)
