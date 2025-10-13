@@ -31,7 +31,7 @@ async def on_ready():
     await bot.tree.sync()
     print(f'Logged in as {bot.user.name}\n')
     # await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Heat Abwaanormal"), status=discord.Status.online)
-    await bot.change_presence(activity=discord.CustomActivity(name="log"), status=discord.Status.online)
+    await bot.change_presence(activity=discord.CustomActivity(name="DAY 100"), status=discord.Status.online)
     # await bot.change_presence(status=discord.Status.invisible)
 
 @bot.event
