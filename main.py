@@ -31,7 +31,7 @@ async def on_ready():
     await bot.tree.sync()
     print(f'Logged in as {bot.user.name}\n')
     # await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="Heat Abwaanormal"), status=discord.Status.online)
-    await bot.change_presence(activity=discord.CustomActivity(name="DAY 100"), status=discord.Status.online)
+    await bot.change_presence(activity=discord.CustomActivity(name="girls kissing <3"), status=discord.Status.online)
     # await bot.change_presence(status=discord.Status.invisible)
 
 @bot.event
@@ -222,7 +222,7 @@ async def get(ctx, user: typing.Optional[discord.User] = None, day: typing.Optio
 @bot.hybrid_command(aliases=["getimg", "gi"], brief="generate image representation of a game")
 async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = None,
                    theme: typing.Literal["dark", "light", "gradient"] = "gradient",
-                   gametheme: typing.Literal["osagle", "bwaa", "inaba"] = "osagle"):
+                   gametheme: typing.Literal["osagle", "bwaa", "inaba"] = "osagle", hiddentheme: str = None):
     async with ctx.typing():
         if day == None: day = words[2]
         if user == None: user = ctx.author
@@ -232,7 +232,8 @@ async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.
         elif len(streaks[str(user.id)][str(day)]) < 3: await ctx.reply("not available."); return
         elif len(streaks[str(user.id)][str(day)][2]) == 0: await ctx.reply("user has started game."); return
         
-        image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day, gen.imagethemes[theme], gen.gamethemes[gametheme])
+        if hiddentheme == None: image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day, gen.imagethemes[theme], gen.gamethemes[gametheme])
+        else: image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day, gen.imagethemes[theme], private.hiddenimagethemes[hiddentheme])
         image.save(f"exports\{ctx.message.id}.png")
         await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
         os.remove(f"exports\{ctx.message.id}.png")
