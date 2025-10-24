@@ -220,9 +220,10 @@ async def get(ctx, user: typing.Optional[discord.User] = None, day: typing.Optio
         await ctx.reply(f"{'OSAGE WORDLE' if user.id != 699418679963811870 else 'OSAGE WORLDE'} #{day}{f' FOR {user.name.upper()}' if username else ''}\n{gen.gentext(streaks[str(user.id)][str(day)][2], gen.textthemes[theme])}")
 
 @bot.hybrid_command(aliases=["getimg", "gi"], brief="generate image representation of a game")
-async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = None,
+async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.Optional[int] = None, large: typing.Optional[bool] = True,
                    theme: typing.Literal["dark", "light", "gradient"] = "gradient",
-                   gametheme: typing.Literal["osagle", "bwaa", "inaba"] = "osagle", hiddentheme: str = None):
+                   gametheme: typing.Literal["osagle", "bwaa", "inaba"] = "osagle",
+                   hiddentheme: str = None):
     async with ctx.typing():
         if day == None: day = words[2]
         if user == None: user = ctx.author
@@ -231,9 +232,12 @@ async def getimage(ctx, user: typing.Optional[discord.User] = None, day: typing.
         elif str(day) not in streaks[str(user.id)].keys(): await ctx.reply("user has not played that day."); return
         elif len(streaks[str(user.id)][str(day)]) < 3: await ctx.reply("not available."); return
         elif len(streaks[str(user.id)][str(day)][2]) == 0: await ctx.reply("user has started game."); return
+
+        gamethemedata = gen.gamethemes[gametheme] if hiddentheme == None else private.hiddenimagethemes[hiddentheme]
         
-        if hiddentheme == None: image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day, gen.imagethemes[theme], gen.gamethemes[gametheme])
-        else: image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day, gen.imagethemes[theme], private.hiddenimagethemes[hiddentheme])
+        if large: image = await gen.genimglarge(streaks[str(user.id)][str(day)][2], user, day, gen.imagethemes[theme], gamethemedata)
+        else: image = await gen.genimg(streaks[str(user.id)][str(day)][2], user, day, gen.imagethemes[theme], gamethemedata)
+
         image.save(f"exports\{ctx.message.id}.png")
         await ctx.reply(file=discord.File(f"exports\{ctx.message.id}.png"))
         os.remove(f"exports\{ctx.message.id}.png")

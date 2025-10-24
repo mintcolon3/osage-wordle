@@ -57,3 +57,35 @@ async def genimg(game, user: discord.User, day, imagetheme, guesstheme):
 
     os.remove(f"exports\{user.id}.png")
     return image
+
+async def genimglarge(game, user: discord.User, day, imagetheme, guesstheme):
+    username = user.name.upper()
+    if len(username) > 15: username = f"{username[:15]}..."
+
+    bg = PILI.open(imagetheme[0]).convert("RGBA").resize((32*10 + 32, 64*len(game) + 128))
+
+    l1 = PILI.new("RGBA", bg.size, "#00000000")
+    draw = ImageDraw.Draw(l1, "RGBA")
+    draw.polygon([(14, 110), (32*10+17, 110), (32*10+17, 64*len(game)+113), (14, 64*len(game)+113)], fill=imagetheme[1])
+    draw.text((14,8), str(day), font=ImageFont.truetype("sdv.ttf", 96), fill=imagetheme[2], anchor="lt", stroke_fill=imagetheme[1], stroke_width=2)
+    draw.text((10*32+16,112), username, font=ImageFont.truetype("sdv.ttf", 32), fill=imagetheme[2], anchor="rd", stroke_fill=imagetheme[1], stroke_width=2)
+    draw.ellipse(((268,6), (334,72)), fill=imagetheme[1])
+
+    l2 = PILI.new("RGBA", bg.size, "#00000000")
+    for i, guess in enumerate(game):
+        for j, letter in enumerate(guess):
+            l2.paste(PILI.open(guesstheme[int(letter)-1]).resize((60, 60)), (j*64 + 18, i*64 + 114))
+    
+    l3, l3m = PILI.new("RGBA", bg.size, "#00000000"), PILI.new("L", bg.size, 0)
+    await user.avatar.save(f"exports\{user.id}.png")
+    l3.paste(PILI.open(f"exports\{user.id}.png").resize((64,64)), (270,8))
+    draw = ImageDraw.Draw(l3m, "L")
+    draw.ellipse(((270,8), (332,70)), fill=255)
+    l3.putalpha(l3m)
+    
+    image = PILI.alpha_composite(bg, l1)
+    image = PILI.alpha_composite(image, l2)
+    image = PILI.alpha_composite(image, l3)
+
+    os.remove(f"exports\{user.id}.png")
+    return image
